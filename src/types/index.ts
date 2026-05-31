@@ -1,25 +1,23 @@
-/** Represents a single Job */
 export interface Job {
   id: string;
   name: string;
-  monthlyHours: number;
   hourlyRate: number;
   taxCode: "757L" | "BR" | "D0" | "500L";
-  niThresholdMonthly?: number; // optional
 }
 
-/** Represents a calculated monthly earning */
-export interface MonthlyEarnings {
+export interface Shift {
+  id: string;
+  jobId: string;
+  date: string;
+  start: string;
+  end: string;
+  breakMinutes: number;
+}
+
+export interface JobEarnings {
   jobId: string;
   gross: number;
   tax: number;
-  ni: number; // National Insurance
+  ni: number;
   net: number;
-}
-
-/** Represents the payday forecast */
-export interface PaydayForecast {
-  jobId: string;
-  nextPayday: string; // ISO date
-  netAmount: number;
 }
