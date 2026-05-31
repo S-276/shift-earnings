@@ -3,7 +3,7 @@ import JobCards from "./components/JobCard";
 import { Job, WeekEntry } from "./types";
 
 // keep your existing tax logic
-import { calcTax, calcNI } from "./utils/tax";
+import { calcTax, calcNI } from "./utils/calc";
 
 export default function App() {
   const [jobs] = useState<Job[]>([]);
