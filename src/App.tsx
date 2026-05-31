@@ -1,38 +1,41 @@
 import { useState } from "react";
-import JobCards from "./components/JobCard";
+import JobCards from "./components/JobCards"; // match your component name
 import { Job, WeekEntry } from "./types";
 
-// keep your existing tax logic
-import { calcTax, calcNI } from "./utils/calc";
+// Unified finance module
+import { calcNet, calcJobGross, calcTax, calcNI } from "./utils/finance";
 
 export default function App() {
-  const [jobs] = useState<Job[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [weeks, setWeeks] = useState<WeekEntry[]>([]);
 
+  // Add a new weekly entry
   function addWeek(w: WeekEntry) {
     setWeeks(prev => [...prev, w]);
   }
 
-  const totalGross = weeks.reduce((a, w) => a + w.totalHours, 0);
+  // Compute total gross money across all jobs
+  const totalGross = jobs.reduce((sum, job) => {
+    const jobWeeks = weeks.filter(w => w.jobId === job.id);
+    return sum + calcJobGross(job, jobWeeks);
+  }, 0);
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: 20 }}>
       <h1>Shift Tracker (Weekly Mode)</h1>
 
       {jobs.map(job => (
-        <JobCard
+        <JobCards
           key={job.id}
           job={job}
           weeks={weeks}
           onAddWeek={addWeek}
-          calcTax={calcTax}
-          calcNI={calcNI}
         />
       ))}
 
-      <div style={{ marginTop: 30 }}>
+      <div style={{ marginTop: 30, borderTop: "1px solid #eee", paddingTop: 10 }}>
         <h3>Summary</h3>
-        <p>Total hours: {totalGross}</p>
+        <p>Total gross: £{totalGross.toFixed(2)}</p>
       </div>
     </div>
   );
