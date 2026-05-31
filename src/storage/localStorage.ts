@@ -1,17 +1,16 @@
-import { Job } from "../types";
+import { Job, Shift } from "../types";
 
-/**
- * Save jobs to localStorage
- */
-export const saveJobs = (jobs: Job[]) => {
-  localStorage.setItem("jobs", JSON.stringify(jobs));
-};
+const JOBS_KEY = "jobs";
+const SHIFTS_KEY = "shifts";
 
-/**
- * Load jobs from localStorage
- */
-export const loadJobs = (): Job[] => {
-  const data = localStorage.getItem("jobs");
-  if (!data) return [];
-  return JSON.parse(data) as Job[];
-};
+export const saveJobs = (jobs: Job[]) =>
+  localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
+
+export const loadJobs = (): Job[] =>
+  JSON.parse(localStorage.getItem(JOBS_KEY) || "[]");
+
+export const saveShifts = (shifts: Shift[]) =>
+  localStorage.setItem(SHIFTS_KEY, JSON.stringify(shifts));
+
+export const loadShifts = (): Shift[] =>
+  JSON.parse(localStorage.getItem(SHIFTS_KEY) || "[]");
