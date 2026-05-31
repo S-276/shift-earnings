@@ -1,5 +1,5 @@
 import { useState } from "react";
-import JobCard from "./components/JobCard";
+import JobCards from "./components/JobCard";
 import { Job, WeekEntry } from "./types";
 
 // keep your existing tax logic
