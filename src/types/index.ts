@@ -4,7 +4,7 @@ export interface Job {
   name: string;
   monthlyHours: number;
   hourlyRate: number;
-  taxCode: "1257L" | "BR" | "D0" | "D1";
+  taxCode: "757L" | "BR" | "D0" | "500L";
   niThresholdMonthly?: number; // optional
 }
 
