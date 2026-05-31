@@ -1,9 +1,11 @@
 /** Represents a single Job */
 export interface Job {
-  id: string; // unique ID
-  name: string; // e.g. "Hospital"
-  monthlyHours: number; // total hours in the month
-  hourlyRate: number; // £ per hour
+  id: string;
+  name: string;
+  monthlyHours: number;
+  hourlyRate: number;
+  taxCode: "1257L" | "BR" | "D0" | "D1";
+  niThresholdMonthly?: number; // optional
 }
 
 /** Represents a calculated monthly earning */
