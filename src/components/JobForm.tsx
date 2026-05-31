@@ -8,7 +8,7 @@ export default function JobForm({
 }) {
   const [name, setName] = useState("");
   const [rate, setRate] = useState(0);
-  const [taxCode, setTaxCode] = useState<Job["taxCode"]>("1257L");
+  const [taxCode, setTaxCode] = useState<Job["taxCode"]>("757L");
 
   function submit() {
     onAdd({
@@ -28,10 +28,10 @@ export default function JobForm({
       <input placeholder="Rate" type="number" value={rate} onChange={e => setRate(+e.target.value)} />
 
       <select value={taxCode} onChange={e => setTaxCode(e.target.value as any)}>
-        <option value="1257L">1257L</option>
+        <option value="757L">757L</option>
         <option value="BR">BR</option>
         <option value="D0">D0</option>
-        <option value="D1">D1</option>
+        <option value="500L">500L</option>
       </select>
 
       <button onClick={submit}>Add</button>
