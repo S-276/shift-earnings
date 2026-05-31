@@ -2,22 +2,13 @@ export interface Job {
   id: string;
   name: string;
   hourlyRate: number;
-  taxCode: "757L" | "BR" | "D0" | "500L";
+  taxCode: "757L" | "500L" | "BR" | "D0";
 }
 
-export interface Shift {
+export interface WeekEntry {
   id: string;
   jobId: string;
-  date: string;
-  start: string;
-  end: string;
-  breakMinutes: number;
-}
-
-export interface JobEarnings {
-  jobId: string;
-  gross: number;
-  tax: number;
-  ni: number;
-  net: number;
+  weekStart: string;
+  weekEnd: string;
+  totalHours: number;
 }
