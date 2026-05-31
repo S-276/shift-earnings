@@ -1,39 +1,39 @@
-import { useEffect, useState } from "react";
-import JobForm from "./components/JobForm";
-import ShiftForm from "./components/ShiftForm";
-import Dashboard from "./pages/Dashboard";
-import { Job, Shift } from "./types";
-import { loadJobs, saveJobs, loadShifts, saveShifts } from "./storage/localStorage";
+import { useState } from "react";
+import JobCard from "./components/JobCard";
+import { Job, WeekEntry } from "./types";
+
+// keep your existing tax logic
+import { calcTax, calcNI } from "./utils/tax";
 
 export default function App() {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [jobs] = useState<Job[]>([]);
+  const [weeks, setWeeks] = useState<WeekEntry[]>([]);
 
-  useEffect(() => {
-    setJobs(loadJobs());
-    setShifts(loadShifts());
-  }, []);
-
-  function addJob(job: Job) {
-    const updated = [...jobs, job];
-    setJobs(updated);
-    saveJobs(updated);
+  function addWeek(w: WeekEntry) {
+    setWeeks(prev => [...prev, w]);
   }
 
-  function addShift(shift: Shift) {
-    const updated = [...shifts, shift];
-    setShifts(updated);
-    saveShifts(updated);
-  }
+  const totalGross = weeks.reduce((a, w) => a + w.totalHours, 0);
 
   return (
-    <div>
-      <h1>Shift Tracker</h1>
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: 20 }}>
+      <h1>Shift Tracker (Weekly Mode)</h1>
 
-      <JobForm onAdd={addJob} />
-      <ShiftForm jobs={jobs} onAdd={addShift} />
+      {jobs.map(job => (
+        <JobCard
+          key={job.id}
+          job={job}
+          weeks={weeks}
+          onAddWeek={addWeek}
+          calcTax={calcTax}
+          calcNI={calcNI}
+        />
+      ))}
 
-      <Dashboard jobs={jobs} shifts={shifts} />
+      <div style={{ marginTop: 30 }}>
+        <h3>Summary</h3>
+        <p>Total hours: {totalGross}</p>
+      </div>
     </div>
   );
 }
