@@ -5,18 +5,15 @@ import { calcNet } from "../utils/calc";
 export default function JobCard({
   job,
   weeks,
-  onAddWeek,
-  calcTax,
-  calcNI
+  onAddWeek
 }: {
   job: Job;
   weeks: WeekEntry[];
   onAddWeek: (w: WeekEntry) => void;
-  calcTax: any;
-  calcNI: any;
 }) {
   const jobWeeks = weeks.filter(w => w.jobId === job.id);
-  const totals = calcNet(job, jobWeeks, calcTax, calcNI);
+
+  const totals = calcNet(job, jobWeeks);
 
   return (
     <div style={styles.card}>
