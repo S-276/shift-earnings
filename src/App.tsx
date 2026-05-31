@@ -1,5 +1,5 @@
 import { useState } from "react";
-import JobCard from "./components/JobCard";
+import JobCard from "./components/JobCards";
 import JobForm from "./components/JobForm";
 import { Job, WeekEntry } from "./types";
 
