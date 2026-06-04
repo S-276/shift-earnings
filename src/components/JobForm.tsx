@@ -1,40 +1,88 @@
 import { useState } from "react";
 import { Job } from "../types";
 
-export default function JobForm({
-  onAdd
-}: {
+interface JobFormProps {
   onAdd: (job: Job) => void;
-}) {
+}
+
+export default function JobForm({ onAdd }: JobFormProps) {
   const [name, setName] = useState("");
-  const [rate, setRate] = useState(0);
-  const [taxCode, setTaxCode] = useState<Job["taxCode"]>("757L");
+  const [taxCode, setTaxCode] = useState("S1131L");
+  const [hourlyRate, setHourlyRate] = useState(0);
+  const [payCycleType, setPayCycleType] = useState<"variable" | "fixed">("variable");
 
   function submit() {
-    onAdd({
+    if (!name.trim()) return;
+    if (hourlyRate <= 0) return;
+
+    const job: Job = {
       id: crypto.randomUUID(),
-      name,
-      hourlyRate: rate,
-      taxCode
-    });
+      name: name.trim(),
+      taxCode: taxCode.trim().toUpperCase(),
+      hourlyRate,
+      hoursWorked: 0,
+      payCycleType,
+      previousGrossYTD: 0,
+      previousTaxPaidYTD: 0
+    };
+
+    onAdd(job);
 
     setName("");
-    setRate(0);
+    setTaxCode("S1131L");
+    setHourlyRate(0);
+    setPayCycleType("variable");
   }
 
   return (
-    <div>
-      <input placeholder="Job" value={name} onChange={e => setName(e.target.value)} />
-      <input placeholder="Rate" type="number" value={rate} onChange={e => setRate(+e.target.value)} />
+    <div className="card">
+      <h2>Add income source</h2>
 
-      <select value={taxCode} onChange={e => setTaxCode(e.target.value as any)}>
-        <option value="757L">757L</option>
-        <option value="BR">BR</option>
-        <option value="D0">D0</option>
-        <option value="500L">500L</option>
-      </select>
+      <div className="form-grid">
+        <label>
+          Name
+          <input
+            value={name}
+            placeholder="Example: Main job"
+            onChange={e => setName(e.target.value)}
+          />
+        </label>
 
-      <button onClick={submit}>Add</button>
+        <label>
+          Tax code
+          <input
+            value={taxCode}
+            placeholder="S1131L"
+            onChange={e => setTaxCode(e.target.value)}
+          />
+        </label>
+
+        <label>
+          Hourly rate
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={hourlyRate}
+            onChange={e => setHourlyRate(Number(e.target.value))}
+          />
+        </label>
+
+        <label>
+          Pay cycle
+          <select
+            value={payCycleType}
+            onChange={e => setPayCycleType(e.target.value as "variable" | "fixed")}
+          >
+            <option value="variable">Variable employer schedule</option>
+            <option value="fixed">Custom dates</option>
+          </select>
+        </label>
+      </div>
+
+      <button className="primary-btn" onClick={submit}>
+        Add source
+      </button>
     </div>
   );
 }
