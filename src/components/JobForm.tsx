@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Job } from "../types";
-
+import { Job, NiPeriodType } from "../types";
 
 interface JobFormProps {
   onAdd: (job: Job) => void;
@@ -35,6 +34,7 @@ export default function JobForm({ onAdd }: JobFormProps) {
     setTaxCode("S1131L");
     setHourlyRate(0);
     setPayCycleType("variable");
+    setNiPeriodType("monthly");
   }
 
   return (
@@ -70,18 +70,7 @@ export default function JobForm({ onAdd }: JobFormProps) {
             onChange={e => setHourlyRate(Number(e.target.value))}
           />
         </label>
-        
-        <label>
-          NI period
-          <select
-            value={niPeriodType}
-            onChange={e => setNiPeriodType(e.target.value as NiPeriodType)}
-          >
-            <option value="monthly">Monthly</option>
-            <option value="pay-period-weeks">Use actual pay-period weeks</option>
-          </select>
-        </label>
-        
+
         <label>
           Pay cycle
           <select
@@ -92,11 +81,21 @@ export default function JobForm({ onAdd }: JobFormProps) {
             <option value="fixed">Custom dates</option>
           </select>
         </label>
+
+        <label>
+          NI period
+          <select
+            value={niPeriodType}
+            onChange={e => setNiPeriodType(e.target.value as NiPeriodType)}
+          >
+            <option value="monthly">Monthly</option>
+            <option value="pay-period-weeks">Use actual pay-period weeks</option>
+          </select>
+        </label>
       </div>
 
       <button className="primary-btn" onClick={submit}>
         Add source
-        setNiPeriodType("monthly");
       </button>
     </div>
   );
