@@ -1,16 +1,29 @@
-import { Job, Shift } from "../types";
+import { Job } from "../types";
 
-const JOBS_KEY = "jobs";
-const SHIFTS_KEY = "shifts";
+const JOBS_KEY = "shift_earnings_jobs_v2";
+const TIPS_KEY = "shift_earnings_tips_v2";
 
-export const saveJobs = (jobs: Job[]) =>
+export function saveJobs(jobs: Job[]): void {
   localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
+}
 
-export const loadJobs = (): Job[] =>
-  JSON.parse(localStorage.getItem(JOBS_KEY) || "[]");
+export function loadJobs(): Job[] {
+  const raw = localStorage.getItem(JOBS_KEY);
 
-export const saveShifts = (shifts: Shift[]) =>
-  localStorage.setItem(SHIFTS_KEY, JSON.stringify(shifts));
+  if (!raw) return [];
 
-export const loadShifts = (): Shift[] =>
-  JSON.parse(localStorage.getItem(SHIFTS_KEY) || "[]");
+  try {
+    return JSON.parse(raw) as Job[];
+  } catch {
+    return [];
+  }
+}
+
+export function saveTips(amount: number): void {
+  localStorage.setItem(TIPS_KEY, String(amount));
+}
+
+export function loadTips(): number {
+  const raw = localStorage.getItem(TIPS_KEY);
+  return raw ? Number(raw) : 0;
+}
