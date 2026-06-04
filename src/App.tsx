@@ -114,6 +114,7 @@ const DEFAULT_JOBS: Job[] = [
     hourlyRate: 0,
     hoursWorked: 0,
     payCycleType: "variable",
+    niPeriodType: "pay-period-weeks",
     selectedPayPeriodId: MAIN_JOB_PAY_PERIODS[0].id,
     previousGrossYTD: 0,
     previousTaxPaidYTD: 0
@@ -125,6 +126,7 @@ const DEFAULT_JOBS: Job[] = [
     hourlyRate: 0,
     hoursWorked: 0,
     payCycleType: "fixed",
+    niPeriodType: "pay-period-weeks",
     customStartDate: "",
     customEndDate: "",
     customPayday: "",
@@ -181,7 +183,17 @@ export default function App() {
           ? selectedPeriod.payday
           : job.customPayday || "";
 
-      return calcJobResult(job, payday);
+      const startDate =
+        job.payCycleType === "variable"
+          ? selectedPeriod.startDate
+          : job.customStartDate || "";
+      
+      const endDate =
+        job.payCycleType === "variable"
+          ? selectedPeriod.endDate
+          : job.customEndDate || "";
+      
+      return calcJobResult(job, payday, startDate, endDate);
     });
   }, [jobs]);
 
