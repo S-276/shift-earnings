@@ -1,80 +1,186 @@
-import { Job, WeekEntry } from "../types";
-import WeekForm from "./WeekForm";
-import { calcNet } from "../utils/calc";
+import { Job, PayPeriod } from "../types";
+import { calcJobResult, formatCurrency } from "../utils/hmrc";
 
-export default function JobCard({
-  job,
-  weeks,
-  onAddWeek
-}: {
+interface JobCardProps {
   job: Job;
-  weeks: WeekEntry[];
-  onAddWeek: (w: WeekEntry) => void;
-}) {
-  const jobWeeks = weeks.filter(w => w.jobId === job.id);
+  payPeriods: PayPeriod[];
+  onUpdate: (job: Job) => void;
+  onDelete: (id: string) => void;
+}
 
-  const totals = calcNet(job, jobWeeks);
+export default function JobCards({ job, payPeriods, onUpdate, onDelete }: JobCardProps) {
+  const selectedPeriod =
+    payPeriods.find(p => p.id === job.selectedPayPeriodId) || payPeriods[0];
+
+  const payday =
+    job.payCycleType === "variable"
+      ? selectedPeriod?.payday || ""
+      : job.customPayday || "";
+
+  const result = calcJobResult(job, payday);
+
+  function update<K extends keyof Job>(key: K, value: Job[K]) {
+    onUpdate({
+      ...job,
+      [key]: value
+    });
+  }
 
   return (
-    <div style={styles.card}>
-      <h2>
-        {job.name} <span style={styles.tag}>{job.taxCode}</span>
-      </h2>
+    <div className="card job-card">
+      <div className="job-header">
+        <div>
+          <h2>{job.name}</h2>
+          <p className="muted">Tax code: {job.taxCode}</p>
+        </div>
 
-      <p>£{job.hourlyRate}/hour</p>
+        <button className="danger-btn" onClick={() => onDelete(job.id)}>
+          Delete
+        </button>
+      </div>
 
-      {/* WEEKS */}
-      <div style={styles.section}>
-        <h4>Weeks</h4>
+      <div className="form-grid">
+        <label>
+          Job name
+          <input value={job.name} onChange={e => update("name", e.target.value)} />
+        </label>
 
-        {jobWeeks.length === 0 && <p>No weeks added yet</p>}
+        <label>
+          Tax code
+          <input
+            value={job.taxCode}
+            onChange={e => update("taxCode", e.target.value.toUpperCase())}
+          />
+        </label>
 
-        {jobWeeks.map(w => (
-          <div key={w.id} style={styles.week}>
-            <span>{w.weekStart}</span>
-            <span>{w.totalHours}h</span>
+        <label>
+          Hourly rate
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={job.hourlyRate}
+            onChange={e => update("hourlyRate", Number(e.target.value))}
+          />
+        </label>
+
+        <label>
+          Hours in this pay period
+          <input
+            type="number"
+            min="0"
+            step="0.25"
+            value={job.hoursWorked}
+            onChange={e => update("hoursWorked", Number(e.target.value))}
+          />
+        </label>
+
+        <label>
+          Previous gross YTD
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={job.previousGrossYTD}
+            onChange={e => update("previousGrossYTD", Number(e.target.value))}
+          />
+        </label>
+
+        <label>
+          Previous PAYE tax paid YTD
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={job.previousTaxPaidYTD}
+            onChange={e => update("previousTaxPaidYTD", Number(e.target.value))}
+          />
+        </label>
+      </div>
+
+      {job.payCycleType === "variable" ? (
+        <div className="section">
+          <label>
+            Pay period
+            <select
+              value={job.selectedPayPeriodId || selectedPeriod?.id}
+              onChange={e => update("selectedPayPeriodId", e.target.value)}
+            >
+              {payPeriods.map(period => (
+                <option key={period.id} value={period.id}>
+                  {period.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {selectedPeriod && (
+            <p className="muted">
+              {selectedPeriod.startDate} to {selectedPeriod.endDate} — paid on{" "}
+              {selectedPeriod.payday}
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="section">
+          <h3>Custom pay period</h3>
+
+          <div className="form-grid">
+            <label>
+              Start date
+              <input
+                type="date"
+                value={job.customStartDate || ""}
+                onChange={e => update("customStartDate", e.target.value)}
+              />
+            </label>
+
+            <label>
+              End date
+              <input
+                type="date"
+                value={job.customEndDate || ""}
+                onChange={e => update("customEndDate", e.target.value)}
+              />
+            </label>
+
+            <label>
+              Payday
+              <input
+                type="date"
+                value={job.customPayday || ""}
+                onChange={e => update("customPayday", e.target.value)}
+              />
+            </label>
           </div>
-        ))}
+        </div>
+      )}
+
+      <div className="results-grid">
+        <div>
+          <span>Gross</span>
+          <strong>{formatCurrency(result.gross)}</strong>
+        </div>
+
+        <div>
+          <span>PAYE</span>
+          <strong>{formatCurrency(result.tax)}</strong>
+        </div>
+
+        <div>
+          <span>NI</span>
+          <strong>{formatCurrency(result.ni)}</strong>
+        </div>
+
+        <div>
+          <span>Net</span>
+          <strong>{formatCurrency(result.net)}</strong>
+        </div>
       </div>
 
-      {/* ADD WEEK */}
-      <WeekForm jobId={job.id} onAdd={onAddWeek} />
-
-      {/* TOTALS */}
-      <div style={styles.totals}>
-        <p>Gross: £{totals.gross.toFixed(2)}</p>
-        <p>Tax: £{totals.tax.toFixed(2)}</p>
-        <p>NI: £{totals.ni.toFixed(2)}</p>
-        <p><b>Net: £{totals.net.toFixed(2)}</b></p>
-      </div>
+      <p className="muted small">
+        Tax month used: {result.taxMonthNumber || "N/A"}
+      </p>
     </div>
   );
 }
-
-const styles = {
-  card: {
-    border: "1px solid #ddd",
-    padding: 16,
-    borderRadius: 10,
-    marginBottom: 16
-  },
-  tag: {
-    fontSize: 12,
-    background: "#eee",
-    padding: "2px 6px",
-    marginLeft: 6
-  },
-  section: {
-    marginTop: 10
-  },
-  week: {
-    display: "flex",
-    justifyContent: "space-between",
-    fontSize: 14
-  },
-  totals: {
-    marginTop: 10,
-    borderTop: "1px solid #eee",
-    paddingTop: 10
-  }
-};
