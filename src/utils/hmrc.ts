@@ -214,9 +214,35 @@ export function calcCumulativePAYE(job: Job, grossThisPeriod: number, payday: st
  * Simplified monthly employee NI estimate.
  * Suitable because your pay is paid monthly-ish.
  */
-export function calcMonthlyNI(gross: number): number {
-  const primaryThreshold = 1048;
-  const upperEarningsLimit = 4189;
+function getWeeksInPayPeriod(startDate: string, endDate: string): number {
+  if (!startDate || !endDate) return 4;
+
+  const start = new Date(startDate + "T00:00:00");
+  const end = new Date(endDate + "T00:00:00");
+
+  const daysInclusive =
+    Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+
+  return Math.max(1, Math.round(daysInclusive / 7));
+}
+
+export function calcNI(
+  gross: number,
+  niPeriodType: "monthly" | "pay-period-weeks",
+  startDate: string,
+  endDate: string
+): number {
+  let primaryThreshold: number;
+  let upperEarningsLimit: number;
+
+  if (niPeriodType === "monthly") {
+    primaryThreshold = 1048;
+    upperEarningsLimit = 4189;
+  } else {
+    const weeks = getWeeksInPayPeriod(startDate, endDate);
+    primaryThreshold = 242 * weeks;
+    upperEarningsLimit = 967 * weeks;
+  }
 
   if (gross <= primaryThreshold) return 0;
 
@@ -230,10 +256,15 @@ export function calcMonthlyNI(gross: number): number {
   );
 }
 
-export function calcJobResult(job: Job, payday: string): JobResult {
+export function calcJobResult(
+  job: Job,
+  payday: string,
+  startDate: string,
+  endDate: string
+): JobResult {
   const gross = calcGross(job);
   const tax = calcCumulativePAYE(job, gross, payday);
-  const ni = calcMonthlyNI(gross);
+  const ni = calcNI(gross, job.niPeriodType, startDate, endDate);
   const taxMonthNumber = getTaxMonthNumber(payday);
 
   return {
@@ -248,7 +279,6 @@ export function calcJobResult(job: Job, payday: string): JobResult {
     payday
   };
 }
-
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
