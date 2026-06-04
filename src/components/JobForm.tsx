@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Job } from "../types";
-const [niPeriodType, setNiPeriodType] = useState<NiPeriodType>("monthly");
+
 
 interface JobFormProps {
   onAdd: (job: Job) => void;
@@ -11,6 +11,7 @@ export default function JobForm({ onAdd }: JobFormProps) {
   const [taxCode, setTaxCode] = useState("S1131L");
   const [hourlyRate, setHourlyRate] = useState(0);
   const [payCycleType, setPayCycleType] = useState<"variable" | "fixed">("variable");
+  const [niPeriodType, setNiPeriodType] = useState<NiPeriodType>("monthly");
 
   function submit() {
     if (!name.trim()) return;
