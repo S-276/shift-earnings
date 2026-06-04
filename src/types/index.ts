@@ -1,5 +1,7 @@
 export type PayCycleType = "variable" | "fixed";
 
+export type NiPeriodType = "monthly" | "pay-period-weeks";
+
 export interface PayPeriod {
   id: string;
   label: string;
@@ -15,6 +17,7 @@ export interface Job {
   hourlyRate: number;
   hoursWorked: number;
   payCycleType: PayCycleType;
+  niPeriodType: NiPeriodType;
   selectedPayPeriodId?: string;
   customStartDate?: string;
   customEndDate?: string;
