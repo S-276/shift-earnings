@@ -17,7 +17,17 @@ export default function JobCards({ job, payPeriods, onUpdate, onDelete }: JobCar
       ? selectedPeriod?.payday || ""
       : job.customPayday || "";
 
-  const result = calcJobResult(job, payday);
+  const startDate =
+    job.payCycleType === "variable"
+      ? selectedPeriod?.startDate || ""
+      : job.customStartDate || "";
+  
+  const endDate =
+    job.payCycleType === "variable"
+      ? selectedPeriod?.endDate || ""
+      : job.customEndDate || "";
+  
+  const result = calcJobResult(job, payday, startDate, endDate);
 
   function update<K extends keyof Job>(key: K, value: Job[K]) {
     onUpdate({
@@ -63,7 +73,20 @@ export default function JobCards({ job, payPeriods, onUpdate, onDelete }: JobCar
             onChange={e => update("hourlyRate", Number(e.target.value))}
           />
         </label>
-
+        
+        <label>
+          NI period
+          <select
+            value={job.niPeriodType}
+            onChange={e =>
+              update("niPeriodType", e.target.value as Job["niPeriodType"])
+            }
+          >
+            <option value="monthly">Monthly</option>
+            <option value="pay-period-weeks">Use actual pay-period weeks</option>
+          </select>
+        </label>
+        
         <label>
           Hours in this pay period
           <input
