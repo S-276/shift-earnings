@@ -1,4 +1,4 @@
-import { Job, JobResult } from "../types";
+import { Job, JobResult, NiPeriodType, PayePeriodType } from "../types";
 
 type Region = "scotland" | "rest-of-uk";
 
@@ -9,14 +9,6 @@ interface TaxCodeInfo {
   flatRate?: number;
 }
 
-/**
- * Converts tax codes like:
- * S1131L -> Scottish, £11,310 allowance
- * S126L  -> Scottish, £1,260 allowance
- * S0T    -> Scottish, £0 allowance, normal Scottish bands
- * BR     -> 20% flat
- * SBR    -> 20% flat Scottish basic rate
- */
 export function parseTaxCode(taxCode: string): TaxCodeInfo {
   const raw = taxCode.toUpperCase().replace(/\s+/g, "");
   const isScottish = raw.startsWith("S");
@@ -47,7 +39,7 @@ export function parseTaxCode(taxCode: string): TaxCodeInfo {
       region,
       cleanCode,
       allowance: 0,
-      flatRate: region === "scotland" ? 0.45 : 0.45
+      flatRate: 0.45
     };
   }
 
@@ -76,8 +68,19 @@ export function parseTaxCode(taxCode: string): TaxCodeInfo {
   };
 }
 
-export function calcGross(job: Job): number {
+export function calcBasicGross(job: Job): number {
   return job.hourlyRate * job.hoursWorked;
+}
+
+export function calcHolidayPay(job: Job): number {
+  if (!job.includeHolidayPay) return 0;
+
+  const basicGross = calcBasicGross(job);
+  return basicGross * (job.holidayPayRate / 100);
+}
+
+export function calcGross(job: Job): number {
+  return calcBasicGross(job) + calcHolidayPay(job);
 }
 
 /**
@@ -130,7 +133,32 @@ export function getTaxMonthNumber(payday: string): number {
   return 12;
 }
 
-function taxFromBands(taxable: number, bands: { limit: number; rate: number }[]): number {
+/**
+ * Approximate tax week from payday.
+ * Tax week 1 starts on 6 April.
+ */
+export function getTaxWeekNumber(payday: string): number {
+  if (!payday) return 1;
+
+  const date = new Date(payday + "T00:00:00");
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+
+  const taxYearStartYear =
+    month < 4 || (month === 4 && day < 6)
+      ? date.getFullYear() - 1
+      : date.getFullYear();
+
+  const taxYearStart = new Date(`${taxYearStartYear}-04-06T00:00:00`);
+  const diffDays = Math.floor((date.getTime() - taxYearStart.getTime()) / 86400000);
+
+  return Math.min(52, Math.max(1, Math.floor(diffDays / 7) + 1));
+}
+
+function taxFromBands(
+  taxable: number,
+  bands: { limit: number; rate: number }[]
+): number {
   let remaining = taxable;
   let tax = 0;
   let previousLimit = 0;
@@ -150,8 +178,7 @@ function taxFromBands(taxable: number, bands: { limit: number; rate: number }[])
 }
 
 /**
- * Annual taxable-income bands after allowance.
- * This is suitable for estimating PAYE.
+ * Taxable income here means income after allowance.
  */
 export function calcAnnualTax(taxableIncome: number, region: Region): number {
   if (taxableIncome <= 0) return 0;
@@ -178,42 +205,53 @@ export function calcAnnualTax(taxableIncome: number, region: Region): number {
   return taxFromBands(taxableIncome, ukBands);
 }
 
-/**
- * Cumulative PAYE estimate.
- *
- * Needs:
- * - current gross
- * - previous gross YTD
- * - previous tax paid YTD
- * - tax month number
- * - tax code
- */
-export function calcCumulativePAYE(job: Job, grossThisPeriod: number, payday: string): number {
+function getTaxPeriodInfo(
+  payday: string,
+  payePeriodType: PayePeriodType
+): { periodNumber: number; periodsInYear: number } {
+  if (payePeriodType === "weekly") {
+    return {
+      periodNumber: getTaxWeekNumber(payday),
+      periodsInYear: 52
+    };
+  }
+
+  return {
+    periodNumber: getTaxMonthNumber(payday),
+    periodsInYear: 12
+  };
+}
+
+export function calcCumulativePAYE(
+  job: Job,
+  grossThisPeriod: number,
+  payday: string
+): number {
   const taxCode = parseTaxCode(job.taxCode);
-  const taxMonthNumber = getTaxMonthNumber(payday);
 
   if (taxCode.flatRate !== undefined) {
     return grossThisPeriod * taxCode.flatRate;
   }
 
-  const allowanceToDate = (taxCode.allowance * taxMonthNumber) / 12;
+  const { periodNumber, periodsInYear } = getTaxPeriodInfo(
+    payday,
+    job.payePeriodType
+  );
+
+  const allowanceToDate = (taxCode.allowance * periodNumber) / periodsInYear;
 
   const grossToDate = job.previousGrossYTD + grossThisPeriod;
   const taxableToDate = Math.max(0, grossToDate - allowanceToDate);
 
-  const annualisedTaxable = taxableToDate * (12 / taxMonthNumber);
+  const annualisedTaxable = taxableToDate * (periodsInYear / periodNumber);
   const annualTax = calcAnnualTax(annualisedTaxable, taxCode.region);
-  const taxDueToDate = annualTax * (taxMonthNumber / 12);
+  const taxDueToDate = annualTax * (periodNumber / periodsInYear);
 
   const taxThisPeriod = taxDueToDate - job.previousTaxPaidYTD;
 
   return Math.max(0, taxThisPeriod);
 }
 
-/**
- * Simplified monthly employee NI estimate.
- * Suitable because your pay is paid monthly-ish.
- */
 function getWeeksInPayPeriod(startDate: string, endDate: string): number {
   if (!startDate || !endDate) return 4;
 
@@ -228,7 +266,7 @@ function getWeeksInPayPeriod(startDate: string, endDate: string): number {
 
 export function calcNI(
   gross: number,
-  niPeriodType: "monthly" | "pay-period-weeks",
+  niPeriodType: NiPeriodType,
   startDate: string,
   endDate: string
 ): number {
@@ -262,23 +300,30 @@ export function calcJobResult(
   startDate: string,
   endDate: string
 ): JobResult {
-  const gross = calcGross(job);
+  const basicGross = calcBasicGross(job);
+  const holidayPay = calcHolidayPay(job);
+  const gross = basicGross + holidayPay;
+
   const tax = calcCumulativePAYE(job, gross, payday);
   const ni = calcNI(gross, job.niPeriodType, startDate, endDate);
-  const taxMonthNumber = getTaxMonthNumber(payday);
+  const { periodNumber } = getTaxPeriodInfo(payday, job.payePeriodType);
 
   return {
     jobId: job.id,
     name: job.name,
     taxCode: job.taxCode,
+    basicGross,
+    holidayPay,
     gross,
     tax,
     ni,
     net: gross - tax - ni,
-    taxMonthNumber,
+    taxPeriodNumber: periodNumber,
+    taxPeriodType: job.payePeriodType,
     payday
   };
 }
+
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
