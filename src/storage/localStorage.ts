@@ -1,7 +1,7 @@
 import { Job } from "../types";
 
-const JOBS_KEY = "shift_earnings_jobs_v2";
-const TIPS_KEY = "shift_earnings_tips_v2";
+const JOBS_KEY = "shift_earnings_jobs_v4";
+const TIPS_KEY = "shift_earnings_tips_v4";
 
 export function saveJobs(jobs: Job[]): void {
   localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
