@@ -109,24 +109,30 @@ const MAIN_JOB_PAY_PERIODS: PayPeriod[] = [
 const DEFAULT_JOBS: Job[] = [
   {
     id: crypto.randomUUID(),
-    name: "Main job salary",
-    taxCode: "S1131L",
-    hourlyRate: 0,
+    name: "KingPins",
+    taxCode: "S757L",
+    hourlyRate: 12.71,
     hoursWorked: 0,
     payCycleType: "variable",
     niPeriodType: "pay-period-weeks",
-    selectedPayPeriodId: MAIN_JOB_PAY_PERIODS[0].id,
+    payePeriodType: "weekly",
+    includeHolidayPay: false,
+    holidayPayRate: 12.07,
+    selectedPayPeriodId: "2026-04-27",
     previousGrossYTD: 0,
     previousTaxPaidYTD: 0
   },
   {
     id: crypto.randomUUID(),
-    name: "Second job",
+    name: "Hotel",
     taxCode: "S0T",
-    hourlyRate: 0,
+    hourlyRate: 12.71,
     hoursWorked: 0,
     payCycleType: "fixed",
-    niPeriodType: "pay-period-weeks",
+    niPeriodType: "monthly",
+    payePeriodType: "monthly",
+    includeHolidayPay: true,
+    holidayPayRate: 12.07,
     customStartDate: "",
     customEndDate: "",
     customPayday: "",
@@ -167,7 +173,7 @@ export default function App() {
     setJobs(prev => prev.filter(job => job.id !== id));
   }
 
-  function resetExampleJobs() {
+  function resetDefaultJobs() {
     setJobs(DEFAULT_JOBS);
     setTips(0);
   }
@@ -187,12 +193,12 @@ export default function App() {
         job.payCycleType === "variable"
           ? selectedPeriod.startDate
           : job.customStartDate || "";
-      
+
       const endDate =
         job.payCycleType === "variable"
           ? selectedPeriod.endDate
           : job.customEndDate || "";
-      
+
       return calcJobResult(job, payday, startDate, endDate);
     });
   }, [jobs]);
@@ -200,6 +206,8 @@ export default function App() {
   const totals = useMemo(() => {
     return results.reduce(
       (acc, result) => {
+        acc.basicGross += result.basicGross;
+        acc.holidayPay += result.holidayPay;
         acc.gross += result.gross;
         acc.tax += result.tax;
         acc.ni += result.ni;
@@ -207,6 +215,8 @@ export default function App() {
         return acc;
       },
       {
+        basicGross: 0,
+        holidayPay: 0,
         gross: 0,
         tax: 0,
         ni: 0,
@@ -222,17 +232,27 @@ export default function App() {
           <p className="eyebrow">Personal PAYE estimator</p>
           <h1>UK Shift Earnings Calculator</h1>
           <p>
-            Estimate planned net income from your main job and second job. Tips
-            are tracked separately and not included in planned income.
+            Estimate planned income from KingPins and Hotel. Tips are tracked
+            separately and are not included in planned income.
           </p>
         </div>
 
-        <button className="secondary-btn" onClick={resetExampleJobs}>
+        <button className="secondary-btn" onClick={resetDefaultJobs}>
           Reset default jobs
         </button>
       </header>
 
       <section className="summary">
+        <div className="summary-card">
+          <span>Basic gross</span>
+          <strong>{formatCurrency(totals.basicGross)}</strong>
+        </div>
+
+        <div className="summary-card">
+          <span>Holiday pay</span>
+          <strong>{formatCurrency(totals.holidayPay)}</strong>
+        </div>
+
         <div className="summary-card">
           <span>Total gross</span>
           <strong>{formatCurrency(totals.gross)}</strong>
@@ -257,7 +277,7 @@ export default function App() {
       <section className="card">
         <h2>Tips / tronc</h2>
         <p className="muted">
-          This is not included in the planned net income calculation.
+          Tips are shown separately and not included in planned net income.
         </p>
 
         <label>
@@ -272,7 +292,8 @@ export default function App() {
         </label>
 
         <p className="tips-line">
-          Extra money outside planned income: <strong>{formatCurrency(tips)}</strong>
+          Extra money outside planned income:{" "}
+          <strong>{formatCurrency(tips)}</strong>
         </p>
       </section>
 
@@ -292,7 +313,8 @@ export default function App() {
 
       <footer className="footer">
         This is an estimator, not official payroll software. For closest results,
-        enter your gross YTD and PAYE tax paid YTD from your latest payslip.
+        enter previous gross YTD and previous PAYE tax paid YTD from your latest
+        payslip.
       </footer>
     </div>
   );
