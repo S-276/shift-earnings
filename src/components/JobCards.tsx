@@ -8,7 +8,12 @@ interface JobCardProps {
   onDelete: (id: string) => void;
 }
 
-export default function JobCards({ job, payPeriods, onUpdate, onDelete }: JobCardProps) {
+export default function JobCards({
+  job,
+  payPeriods,
+  onUpdate,
+  onDelete
+}: JobCardProps) {
   const selectedPeriod =
     payPeriods.find(p => p.id === job.selectedPayPeriodId) || payPeriods[0];
 
@@ -52,7 +57,10 @@ export default function JobCards({ job, payPeriods, onUpdate, onDelete }: JobCar
       <div className="form-grid">
         <label>
           Job name
-          <input value={job.name} onChange={e => update("name", e.target.value)} />
+          <input
+            value={job.name}
+            onChange={e => update("name", e.target.value)}
+          />
         </label>
 
         <label>
@@ -108,6 +116,19 @@ export default function JobCards({ job, payPeriods, onUpdate, onDelete }: JobCar
         </label>
 
         <label>
+          PAYE period
+          <select
+            value={job.payePeriodType}
+            onChange={e =>
+              update("payePeriodType", e.target.value as Job["payePeriodType"])
+            }
+          >
+            <option value="monthly">Monthly</option>
+            <option value="weekly">Weekly</option>
+          </select>
+        </label>
+
+        <label>
           NI period
           <select
             value={job.niPeriodType}
@@ -118,6 +139,28 @@ export default function JobCards({ job, payPeriods, onUpdate, onDelete }: JobCar
             <option value="monthly">Monthly</option>
             <option value="pay-period-weeks">Use actual pay-period weeks</option>
           </select>
+        </label>
+
+        <label>
+          Include accrued holiday pay?
+          <select
+            value={job.includeHolidayPay ? "yes" : "no"}
+            onChange={e => update("includeHolidayPay", e.target.value === "yes")}
+          >
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </label>
+
+        <label>
+          Holiday pay rate %
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={job.holidayPayRate}
+            onChange={e => update("holidayPayRate", Number(e.target.value))}
+          />
         </label>
       </div>
 
@@ -179,9 +222,19 @@ export default function JobCards({ job, payPeriods, onUpdate, onDelete }: JobCar
         </div>
       )}
 
-      <div className="results-grid">
+      <div className="results-grid six-results">
         <div>
-          <span>Gross</span>
+          <span>Basic gross</span>
+          <strong>{formatCurrency(result.basicGross)}</strong>
+        </div>
+
+        <div>
+          <span>Holiday pay</span>
+          <strong>{formatCurrency(result.holidayPay)}</strong>
+        </div>
+
+        <div>
+          <span>Total gross</span>
           <strong>{formatCurrency(result.gross)}</strong>
         </div>
 
@@ -201,7 +254,10 @@ export default function JobCards({ job, payPeriods, onUpdate, onDelete }: JobCar
         </div>
       </div>
 
-      <p className="muted small">Tax month used: {result.taxMonthNumber || "N/A"}</p>
+      <p className="muted small">
+        Tax {result.taxPeriodType === "weekly" ? "week" : "month"} used:{" "}
+        {result.taxPeriodNumber || "N/A"}
+      </p>
     </div>
   );
 }
